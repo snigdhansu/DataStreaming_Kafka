@@ -5,9 +5,15 @@ COPY requirements.txt .
 RUN set -ex; \
   	pip install --no-cache-dir -r requirements.txt
 
+
+#RUN ./wait-for-it.sh
+
 # Copy resources
 WORKDIR /
 COPY wait-for-it.sh wait-for-it.sh
+
+#Windows configuration
+RUN apt-get update && apt-get install -y dos2unix && dos2unix wait-for-it.sh
 
 ADD python-producer.py .
 
