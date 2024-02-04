@@ -1,7 +1,8 @@
 # Project to practice Python / Kafka / Flink
 
 ## Architecture
-![Flink architecture](https://github.com/skalskibukowa/Flink-Project/assets/29678557/352b1e1e-b810-499b-8ce9-b05608e71233)
+
+![Flink-weather-streaming](https://github.com/skalskibukowa/Project-Kafka-Flink/assets/29678557/2b47daa2-4152-4bf4-9db4-464bf39b2479)
 
 ## Overview
 
@@ -10,6 +11,7 @@ The project simulates continuously reads weather data from a Kafka topic, calcul
 Here's a detailed breakdown of the project:
 
 **1. Kafka Producer:**
+
 
 **gen_data()** function generates random weather data every 10 seconds and sends it to the weather topic in Kafka.
 
