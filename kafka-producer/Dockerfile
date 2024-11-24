@@ -10,10 +10,13 @@ RUN set -ex; \
 
 # Copy resources
 WORKDIR /
+
 COPY wait-for-it.sh wait-for-it.sh
 
 #Windows configuration
 RUN apt-get update && apt-get install -y dos2unix && dos2unix wait-for-it.sh
+
+RUN chmod +x wait-for-it.sh
 
 ADD python-producer.py .
 

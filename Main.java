@@ -56,6 +56,7 @@ public class Main {
       
 
       cityAndValueStream.print();
+      
       cityAndValueStream.addSink(JdbcSink.sink("insert into weather (city, average_temperature) values (?, ?)",
             (statement, event) -> {
               statement.setString(1, event.f0);
