@@ -1,4 +1,4 @@
-# Project to practice Python / Kafka / Flink
+<!-- # Project to practice Python / Kafka / Flink
 
 ## Architecture
 
@@ -123,4 +123,4 @@ c. Start the Docker containers:
 d. Verify PostgreSQL connection:
 * docker exec -it postgres-flink psql -U postgres -d postgres
 * \dt
-* select * from weather
+* select * from weather -->

@@ -7,30 +7,6 @@ from json import dumps, loads
 # from faker import Faker
 from kafka import KafkaProducer
 
-
-'''
-kafka_nodes = "kafka:9092"
-myTopic = "weather"
-
-def gen_data():
-  faker = Faker()
-
-  prod = KafkaProducer(bootstrap_servers=kafka_nodes, value_serializer=lambda x:dumps(x).encode('utf-8'))
-  my_data = {'city': faker.city(), 'temperature': random.uniform(10.0, 110.0)}
-  print(my_data)
-  prod.send(topic=myTopic, value=my_data)
-
-  prod.flush()
-
-if __name__ == "__main__":
-  gen_data()
-  schedule.every(10).seconds.do(gen_data)
-
-  while True:
-    schedule.run_pending()
-    time.sleep(0.5)
-'''
-
 KAFKA_SERVER = "kafka:9092"
 KAFKA_TOPIC = "github-events"
 GITHUB_EVENTS_URL = "https://api.github.com/orgs/microsoft/events"
