@@ -93,23 +93,6 @@ public class GithubTrendJob {
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
         
-        // Save top trending repositories to PostgreSQL
-        topTrendingRepos
-                .flatMap((List<Tuple2<String, Integer>> repos, Collector<Tuple2<String, Integer>> out) -> {
-                        for (Tuple2<String, Integer> repo : repos) {
-                            out.collect(repo);
-                        }
-                    })
-                .returns(Types.TUPLE(Types.STRING, Types.INT))
-                .sinkTo(githubSink);
-                // addSink(
-                //     new DeleteAndInsertSink(
-                //         "jdbc:postgresql://host.docker.internal:5438/postgres",
-                //         "postgres",
-                //         "postgres"
-                //     )    
-                // );
-
         env.execute("Github-Trend-Job");
     }
 
@@ -128,48 +111,4 @@ public class GithubTrendJob {
         }
     }
 
-    // public static class DeleteAndInsertSink implements SinkFunction<Tuple2<String, Integer>> {
-
-    //     private final String jdbcUrl;
-    //     private final String username;
-    //     private final String password;
-    
-    //     public DeleteAndInsertSink(String jdbcUrl, String username, String password) {
-    //         this.jdbcUrl = jdbcUrl;
-    //         this.username = username;
-    //         this.password = password;
-    //     }
-    
-    //     @Override
-    //     public void invoke(Tuple2<String, Integer> value) throws Exception {
-    //         Connection connection = null;
-    //         Statement deleteStmt = null;
-    //         PreparedStatement insertStmt = null;
-    
-    //         try {
-    //             // Establish database connection
-    //             connection = DriverManager.getConnection(jdbcUrl, username, password);
-    
-    //             // Delete the first record
-    //             String deleteSQL = "DELETE FROM trending_repositories " +
-    //                                "WHERE id = (SELECT id FROM trending_repositories ORDER BY id ASC LIMIT 1)";
-    //             deleteStmt = connection.createStatement();
-    //             deleteStmt.execute(deleteSQL);
-    
-    //             // Insert the new records
-    //             String insertSQL = "INSERT INTO trending_repositories (repo_name, action_count) VALUES (?, ?)";
-    //             insertStmt = connection.prepareStatement(insertSQL);
-    
-    //             insertStmt.setString(1, value.f0);
-    //             insertStmt.setInt(2, value.f1);
-    //             insertStmt.executeUpdate();
-    
-    //         } finally {
-    //             // Clean up resources
-    //             if (deleteStmt != null) deleteStmt.close();
-    //             if (insertStmt != null) insertStmt.close();
-    //             if (connection != null) connection.close();
-    //         }
-    //     }
-    // }
 }
