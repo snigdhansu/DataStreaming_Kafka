@@ -1,8 +1,8 @@
-<!-- # Project to practice Python / Kafka / Flink
+# Github Trending Repositories
 
 ## Architecture
 
-![Flink-weather-streaming](https://github.com/skalskibukowa/Project-Kafka-Flink/assets/29678557/2b47daa2-4152-4bf4-9db4-464bf39b2479)
+![Flink-weather-streaming](link for the architecture image)
 
 ## Overview
 
@@ -12,115 +12,55 @@ Here's a detailed breakdown of the project:
 
 **1. Kafka Producer:**
 
-
-**gen_data()** function generates random weather data every 10 seconds and sends it to the weather topic in Kafka.
+**gen_data()** function requests github event data every 20 seconds and sends it to the 'github-events' topic in Kafka.
+**Language:** Python
 
 **2. Flink Processor:**
 
-**Main.java** is the main entry point for the Flink application.
-**WatermarkStrategy** assigns watermarks to events, ensuring that late-arriving events are not processed.
+**GithubTrendJob.java** is the main entry point for the Flink application.
+**GithubEventData class** represents a github event data with id, repo, and other attributes.
+**GithubEventDeserializationSchema** is a custom deserialization schema that reads JSON-formatted github event data from Kafka.
+**Main() function** creates a Flink streaming environment and reads event data from the 'github-events' topic using KafkaSource.
+**Aggregation** is performed to sum the number of events based on the repo key
+**SlidingProcessingTimeWindows** is an aggregation function that calculates the count of events for each repo every 2 minutes considering the last 10 minutes data.
+**repoAndValueStream** is a DataStream containing the repo and total events count for each repo.
+**MyProcessWindowFunction** is a custom processing function that sorts the aggregated stream every 2 minutes and retrieves the top 10 repos
+**topTrendingRepos** is a DataStream containing the top 10 repositories with highest number of activities
+**githubSink** is the KafkaSink created to publish the top trending repo information to Kafka cluster topic 'trending-github-repos'
+**Language:** Java
 
-**WeatherDeserializationSchema** is a custom deserialization schema that reads JSON-formatted weather data from Kafka.
+**3. Github Consumer:**
 
-**Main() function** creates a Flink streaming environment and reads weather data from the weather topic using KafkaSource.
+**KafkaConsumer** consumes the final top 10 trending repos from the topic 'trending-github-repos' 
+**Language:** Python
 
-**AverageAggregator** is an aggregation function that calculates the average temperature for each city every 60 seconds.
-
-**cityAndValueStream** is a DataStream containing the city and average temperature for each city.
-
-**JdbcSink** stores the calculated average temperatures in the weather table in PostgreSQL.
-
-**3. Data Structures:**
-
-**Weather class** represents a weather data point with city and temperature attributes.
-**MyAverage class** is a helper class used by the AverageAggregator function to store intermediate aggregation results.
-
-Overall, the project utilizes Kafka for real-time data ingestion, Flink for data processing and aggregation, and PostgreSQL for data storage.
+Overall, the project utilizes Kafka for real-time data ingestion, Flink for data processing and aggregation.
 
 ## Instructions for Building and Running a Flink Application with Kafka and PostgreSQL
 
-This document provides comprehensive instructions for building and running a Flink application that ingests weather data from Kafka, processes it, and stores the results in a PostgreSQL database.
+This document provides comprehensive instructions for building and running a Flink application that ingests github data from Kafka, processes it, to find the trending repositories and sends the results to another Kafka topic for further application usage.
 
 ### Prerequisites:
 
 Docker and Docker Compose installed
-Familiarity with Flink, Kafka, and PostgreSQL
-Steps:
-
-### Project Structure:
-
-a. Create a directory for each component:
-* postgres: For the PostgreSQL database
-* kafka-producer: For the Kafka producer
-* flink-processor: For the Flink processor
-
-### PostgreSQL Setup:
-
-a. Create a Dockerfile for PostgreSQL:
-* Expose port 5432 for database access
-* Copy the docker-compose.yml file
-
-b. Create a docker-compose.yml file for the PostgreSQL container:
-* Define the PostgreSQL image
-* Map host port 5432 to container port 5432
-* Mount a data directory for persistence
-
-### Kafka Producer Setup:
-
-a. Create a directory for Kafka Producer scripts:
-* scripts: For PowerShell and Python scripts
-
-b. Create a PowerShell script (.ps1) to generate weather data:
-* Generate random weather data
-* Use Kafka Producer API to send weather data to Kafka topic
-
-c. Create a requirements.txt file to list Python dependencies:
-* Kafka Python library for producing data to Kafka
-
-d. Create a Python script (.py) to call the PowerShell script:
-* Execute the PowerShell script to generate weather data
-
-e. Create a Dockerfile for the Kafka Producer:
-* Install Python 3.10
-* Install Kafka Python library
-* Copy scripts and Python script
-* Run the Python script
-
-### Flink Processor Setup:
-
-a. Create a directory for Flink application resources:
-* src/main/java: For Java source code
-* resources: For resource files (log4j2.properties)
-
-b. Create a log4j2.properties file for logging configuration:
-* Set logging level to INFO
-* Configure console logging pattern
-
-c. Create a Dockerfile for the Flink Processor:
-* Use Flink:1.14.4 image
-* Copy Flink application JAR file
-* Copy log4j2.properties file
-* Specify Flink command to execute application JAR
-
-d. Create a main class (Main.java) to handle weather data processing and ingestion into PostgreSQL:
-* Create a Flink streaming job
-* Read data from Kafka topic
-* Process and transform weather data
-* Write processed data to PostgreSQL database
+Familiarity with Flink, Kafka
 
 ### Build and Run:
 
 a. Build the Kafka Producer Docker image:
-* cd kafka-producer && docker build -t kafka-producer .
+* cd kafka-producer 
+* docker build -t kafka-producer .
 
 b. Build the Flink Processor Docker image:
-* cd flink-processor && mvn clean package
+* cd flink-processor
+* mvn clean package
 * docker build -t flink-processor .
+
+b. Build the Github Consumer Docker image:
+* cd github-consumer
+* docker build -t github-consumer .
 
 c. Start the Docker containers:
 * docker-compose up -d
 
-d. Verify PostgreSQL connection:
-* docker exec -it postgres-flink psql -U postgres -d postgres
-* \dt
-* select * from weather -->
+d. Verify from logs of github-consumer container

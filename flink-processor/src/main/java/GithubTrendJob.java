@@ -1,8 +1,5 @@
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.connector.jdbc.JdbcConnectionOptions;
-import org.apache.flink.connector.jdbc.JdbcExecutionOptions;
-import org.apache.flink.connector.jdbc.JdbcSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -13,15 +10,12 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.formats.json.JsonSerializationSchema;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 
-
-import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -31,20 +25,20 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Comparator;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
+
 
 public class GithubTrendJob {
     static final String BROKERS = "kafka:9092";
 
     public static void main(String[] args) throws Exception {
+
+        // Set the Streaming Environment 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
 
         System.out.println("Environment created");
 
+        // Subscribe to the topic, thus creating the source of the streaming data and define the deserialization schema
         KafkaSource<GithubEventData> githubEventSource = KafkaSource.<GithubEventData>builder()
                                       .setBootstrapServers(BROKERS)
                                       .setProperty("partition.discovery.interval.ms", "1000")
@@ -59,7 +53,8 @@ public class GithubTrendJob {
         System.out.println("Kafka source created");
         githubEventStream.print();
         
-
+        // Aggregate the events based on repo name and count the events for each repo, similar to map-reduce algorithm 
+        // Aggregation is calculated for every 2 minutes considering the last 10 minutes with the help of SlidingWindow
         DataStream<Tuple2<String, Integer>> repoAndValueStream = githubEventStream
                 .map(event -> new Tuple2<>(event.getRepo().getName(), 1))
                 .returns(Types.TUPLE(Types.STRING, Types.INT))
@@ -74,15 +69,18 @@ public class GithubTrendJob {
         repoAndValueStream.print();
         System.out.println("Aggregation created");
 
+        // Process the aggregated event count stream every 2 minutes, retrieve the top 10 trending repos
         DataStream<List<Tuple2<String, Integer>>> topTrendingRepos = repoAndValueStream
                 .windowAll(TumblingProcessingTimeWindows.of(Time.minutes(2)))
                 .process(new MyProcessWindowFunction());
-        
         // topTrendingRepos.print();
+
+        
+        // ----- Producer job
 
         // Create a JSON serializer
         SerializationSchema<Tuple2<String, Integer>> jsonSerializer = new JsonSerializationSchema<>(); 
-
+        // Create the Kafka Sink
         KafkaSink<Tuple2<String, Integer>> githubSink = KafkaSink.<Tuple2<String, Integer>>builder()
                 .setBootstrapServers(BROKERS)
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
@@ -92,7 +90,18 @@ public class GithubTrendJob {
                 )
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
+
+        // Send the top trending repos to another kafka cluster topic 
+        topTrendingRepos
+                .flatMap((List<Tuple2<String, Integer>> repos, Collector<Tuple2<String, Integer>> out) -> {
+                        for (Tuple2<String, Integer> repo : repos) {
+                            out.collect(repo);
+                        }
+                    })
+                .returns(Types.TUPLE(Types.STRING, Types.INT))
+                .sinkTo(githubSink);
         
+        // Execute the Flink job
         env.execute("Github-Trend-Job");
     }
 
@@ -103,12 +112,14 @@ public class GithubTrendJob {
             List<Tuple2<String, Integer>> repoList = new ArrayList<>();
             input.forEach(repoList::add);
 
+            // Sort the list of repos, based on the count (every two minutes)
             repoList.sort(Comparator.comparingInt((Tuple2<String, Integer> tuple) -> tuple.f1).reversed());
+
+            // Retrieve the top 10
             List<Tuple2<String, Integer>> top10 = new ArrayList<>(repoList.subList(0, Math.min(10, repoList.size())));
 
             // System.out.println("-------------"+ top10.toString());
             out.collect(top10);
         }
     }
-
 }
