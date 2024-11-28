@@ -71,6 +71,18 @@ services:
       - bridge
     container_name: postgresFlink
 
+  github-consumer:
+    image: github-consumer
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_SERVER: "kafka:9092"
+      ZOOKEEPER_SERVER: "zookeeper:32181"
+      PRODUCER_INTERVAL: 100
+    networks:
+      - bridge
+    container_name: github-consumer
+
 volumes:
   settings:
   data:
