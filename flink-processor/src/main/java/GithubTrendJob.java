@@ -59,7 +59,7 @@ public class GithubTrendJob {
                 .map(event -> new Tuple2<>(event.getRepo().getName(), 1))
                 .returns(Types.TUPLE(Types.STRING, Types.INT))
                 .keyBy(value -> value.f0)
-                .window(SlidingProcessingTimeWindows.of(Time.minutes(10), Time.minutes(2)))
+                .window(SlidingProcessingTimeWindows.of(Time.minutes(30), Time.minutes(10)))
                 .reduce(new ReduceFunction<Tuple2<String, Integer>>() {
                     public Tuple2<String, Integer> reduce(Tuple2<String, Integer> v1, Tuple2<String, Integer> v2) {
                       return new Tuple2<>(v1.f0, v1.f1 + v2.f1);
@@ -71,7 +71,7 @@ public class GithubTrendJob {
 
         // Process the aggregated event count stream every 2 minutes, retrieve the top 10 trending repos
         DataStream<List<Tuple2<String, Integer>>> topTrendingRepos = repoAndValueStream
-                .windowAll(TumblingProcessingTimeWindows.of(Time.minutes(2)))
+                .windowAll(TumblingProcessingTimeWindows.of(Time.minutes(10)))
                 .process(new MyProcessWindowFunction());
         // topTrendingRepos.print();
 

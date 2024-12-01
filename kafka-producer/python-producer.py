@@ -21,19 +21,22 @@ def gen_data():
   
   try:
     response = requests.get(GITHUB_EVENTS_URL, headers={"If-Modified-Since": last_fetched_timestamp})
-    
+    event_count = 0
     if response.status_code == 200:
       events = response.json()
 
       for event in events:
         # Ensure only new recent modified events are sent to the topic
         if "id" in event and event['created_at']>last_fetched_timestamp:
+          event_count += 1
           producer.send(KAFKA_TOPIC, event)
           
       # Update the last_fetched_timestamp
       if events:
         last_fetched_timestamp = events[0]['created_at']
         print(f"Updated last_fetched_timestamp: {last_fetched_timestamp}")
+        print(f"Total Events fetched: {event_count}")
+
         
     elif response.status_code == 304:
       print("No new events since the last fetch.")
