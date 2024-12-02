@@ -39,7 +39,6 @@ def gen_data():
         repo_list = repos['items']  # List of repositories
         producer.send(KAFKA_TOPIC, repo_list)
         repo_count = len(repos['items'])
-        # print(repos['items'])  # This will give you the number of repositories
         print(f"Number of repositories fetched: {repo_count}")
         
     elif response.status_code == 304:

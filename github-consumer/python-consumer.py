@@ -38,11 +38,9 @@ if __name__ == "__main__":
     print("Consumer started")
     try:
         for message in consumer:
-            # print(message)
             repo_info = message.value
 
             for repo in repo_info:
-                #  print(f"Repository Name: {repo.get('name', 'N/A')}")
                 repo_data = {
                     'name': repo.get('name'),
                     'full_name': repo.get('full_name'),
