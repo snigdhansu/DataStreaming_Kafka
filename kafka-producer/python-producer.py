@@ -8,11 +8,19 @@ from datetime import datetime, timedelta
 from kafka import KafkaProducer
 
 KAFKA_SERVER = "kafka:9092"
-KAFKA_TOPIC = "github-events"
-GITHUB_EVENTS_URL = "https://api.github.com/orgs/microsoft/events"
+KAFKA_TOPIC = "github-repo"
+GITHUB_EVENTS_URL = "https://api.github.com/"
 
 # Initialize last fetched timestamp as one minute ago
-last_fetched_timestamp = (datetime.utcnow() - timedelta(minutes=1)).isoformat() + "Z"  # ISO 8601 format
+
+last_fetched_timestamp = (datetime.utcnow() - timedelta(minutes=2)).isoformat() + "Z"  # ISO 8601 format
+print(last_fetched_timestamp)
+
+query = f"pushed:>{last_fetched_timestamp} stars:>0"
+page = 1
+per_page = 100
+
+GITHUB_REPOS_URL = f"https://api.github.com/search/repositories?q={query}&sort=stars&order=desc&page={page}&per_page={per_page}"
 
 def gen_data():
   global last_fetched_timestamp
@@ -20,23 +28,19 @@ def gen_data():
   producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, value_serializer=lambda x:dumps(x).encode('utf-8')) 
   
   try:
-    response = requests.get(GITHUB_EVENTS_URL, headers={"If-Modified-Since": last_fetched_timestamp})
-    event_count = 0
+    response = requests.get(GITHUB_REPOS_URL, headers={"If-Modified-Since": last_fetched_timestamp})
     if response.status_code == 200:
-      events = response.json()
+      repos = response.json()
 
-      for event in events:
-        # Ensure only new recent modified events are sent to the topic
-        if "id" in event and event['created_at']>last_fetched_timestamp:
-          event_count += 1
-          producer.send(KAFKA_TOPIC, event)
+      
           
       # Update the last_fetched_timestamp
-      if events:
-        last_fetched_timestamp = events[0]['created_at']
-        print(f"Updated last_fetched_timestamp: {last_fetched_timestamp}")
-        print(f"Total Events fetched: {event_count}")
-
+      if 'items' in repos:
+        repo_list = repos['items']  # List of repositories
+        producer.send(KAFKA_TOPIC, repo_list)
+        repo_count = len(repos['items'])
+        # print(repos['items'])  # This will give you the number of repositories
+        print(f"Number of repositories fetched: {repo_count}")
         
     elif response.status_code == 304:
       print("No new events since the last fetch.")
@@ -51,7 +55,7 @@ def gen_data():
 
 if __name__ == "__main__":
   gen_data()
-  schedule.every(20).seconds.do(gen_data) # Respect GitHub API rate limits
+  schedule.every(2).minutes.do(gen_data) # Respect GitHub API rate limits
   
   while True:
     schedule.run_pending()

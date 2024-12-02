@@ -41,20 +41,10 @@ services:
       - bridge
     container_name: kafka-producer
 
-  flink-processor:
-    image: flink-processor
-    depends_on:
-      - kafka
-    environment:
-      KAFKA_SERVER: "kafka:9092"
-      ZOOKEEPER_SERVER: "zookeeper:32181"
-      PRODUCER_INTERVAL: 100
-    networks:
-      - bridge
-    container_name: flink-processor
-
   github-consumer:
     image: github-consumer
+    volumes:
+      - ./csv_data:/app/csv_data
     depends_on:
       - kafka
     environment:
