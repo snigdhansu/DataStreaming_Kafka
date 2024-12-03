@@ -76,5 +76,38 @@ Installations:
 4. enter your access key and secret key and AWS bucket name in python-consumer.py
 5. Build the images and run the code and inside github-consumer container you will see statement that file is uploaded. Open AWS bucket to view/ downlaod the csv file there.
 
+6. You might encounter permission issue while uploading the files. Steps below to fix the error:
+
+Using AWS Management Console
+Navigate to the IAM Console:
+Go to AWS IAM Policies.
+Go to Permissions -> add permissions -> create inline policy->use json
+
+Put the below code in json and replace <bucket name> with your s3 bucket name and then create the policy. Now you should see the files getting uploaded when you run from docker.
+
+Json: 
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<bucket name>",
+                "arn:aws:s3:::<bucket name>/*"
+            ]
+        }
+    ]
+}
+
+
+
+
+
 
 
