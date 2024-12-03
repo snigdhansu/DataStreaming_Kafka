@@ -11,7 +11,7 @@ KAFKA_SERVER = "kafka:9092"
 KAFKA_TOPIC = "github-repo"
 
 s3 = boto3.client('s3', aws_access_key_id='<enteryouraccesskey', aws_secret_access_key='<enteryoursecretkey>')
-bucket_name = 'testproject532'
+bucket_name = '<add your bucket name>'
 
 CSV_HEADERS = ['name', 'full_name', 'html_url', 'description', 'stars', 'forks', 'language', 'created_at', 'updated_at', 'open_issues']
 CSV_DIRECTORY =  "/app/csv_data"
